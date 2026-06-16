@@ -1,0 +1,13 @@
+scenario_id,scenario_folder,purpose,expected_decision,expected_route,expected_exception
+1,scenario_01_clean_pr,Clean PR from approved vendor within budget,auto_po,none,none
+2,scenario_02_non_preferred_vendor,Non-preferred vendor selected without justification,exception,Procurement,non_preferred_vendor_without_justification
+3,scenario_03_same_week_threshold_anomaly,Multiple PRs from same department in same week exceed threshold,exception,Compliance/Procurement,threshold_anomaly
+4,scenario_04_budget_exhausted,Requested amount exceeds available cost center budget,blocked,FP&A,budget_exhausted
+5,scenario_05_emergency_sole_source,Emergency sole-source purchase requires expedited approval,expedited_approval,Expedited Approval,emergency_sole_source
+6,scenario_06_vague_item_description,Item description is too vague for pricing validation,exception,Buyer Clarification,vague_item_description
+7,scenario_07_split_order_pattern,Same item split across multiple PRs to avoid threshold,exception,Compliance Review,split_order_detected
+8,scenario_08_low_confidence_extraction,Low confidence extraction requires manual review,manual_review,Manual Review,low_confidence_extraction
+9,scenario_09_small_clean_pr,Small clean PR under threshold with approved vendor,auto_approve,none,none
+10,scenario_10_framework_agreement,PR is covered by framework agreement,policy_driven,Procurement,framework_agreement_flag
+11,scenario_11_blanket_order,PR is a blanket order requiring policy-driven handling,policy_driven,Procurement,blanket_order_flag
+12,scenario_12_multi_currency,PR uses non-default currency and requires currency validation,policy_validation,Finance/Procurement,multi_currency_flag

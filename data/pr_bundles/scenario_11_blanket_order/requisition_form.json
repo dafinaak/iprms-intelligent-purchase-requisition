@@ -1,0 +1,22 @@
+{
+  "pr_id": "PR-S11-001",
+  "requester": "Elira Shala",
+  "department": "HR",
+  "cost_center": "CC-HR-001",
+  "vendor_name": "OfficePro",
+  "item_description": "Printer paper A4",
+  "item_category": "Office Supplies",
+  "quantity": 1000,
+  "unit_price": 5,
+  "estimated_amount": 5000,
+  "currency": "EUR",
+  "business_justification": "Blanket order for recurring office supplies for the next quarter.",
+  "urgency": "normal",
+  "sole_source": false,
+  "emergency": false,
+  "framework_agreement": false,
+  "blanket_order": true,
+  "simulated_confidence_score": 0.95,
+  "requested_date": "2026-06-18",
+  "number_of_bids": 3
+}

@@ -1,0 +1,14 @@
+{
+  "scenario_id": 5,
+  "scenario_name": "scenario_05_emergency_sole_source",
+  "scenario_purpose": "Emergency sole-source purchase",
+  "expected_decision": "expedited_approval",
+  "expected_route": "Expedited Approval",
+  "expected_exception": "emergency_sole_source",
+  "expected_artifacts": [
+    "sole_source_check.json",
+    "policy_check.json",
+    "approval_packet.json",
+    "run_summary.csv"
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "pr_id": "PR-S01-001",
+  "requester": "Arta Krasniqi",
+  "department": "IT",
+  "cost_center": "CC-IT-001",
+  "vendor_name": "TechPlus",
+  "item_description": "Wireless mouse",
+  "item_category": "IT Equipment",
+  "quantity": 20,
+  "unit_price": 25,
+  "estimated_amount": 500,
+  "currency": "EUR",
+  "business_justification": "Replace damaged computer accessories for IT staff.",
+  "urgency": "normal",
+  "sole_source": false,
+  "emergency": false,
+  "framework_agreement": false,
+  "blanket_order": false,
+  "simulated_confidence_score": 0.97,
+  "requested_date": "2026-06-15",
+  "number_of_bids": 3
+}

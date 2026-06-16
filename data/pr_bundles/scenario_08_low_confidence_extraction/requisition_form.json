@@ -1,0 +1,22 @@
+{
+  "pr_id": "PR-S08-001",
+  "requester": "Besa Hoxha",
+  "department": "Finance",
+  "cost_center": "CC-FIN-001",
+  "vendor_name": "OfficePro",
+  "item_description": "Printer toner cartridge",
+  "item_category": "Office Supplies",
+  "quantity": 10,
+  "unit_price": 45,
+  "estimated_amount": 450,
+  "currency": "EUR",
+  "business_justification": "Toner replacement for finance printers.",
+  "urgency": "normal",
+  "sole_source": false,
+  "emergency": false,
+  "framework_agreement": false,
+  "blanket_order": false,
+  "simulated_confidence_score": 0.60,
+  "requested_date": "2026-06-17",
+  "number_of_bids": 3
+}

@@ -1,0 +1,14 @@
+{
+  "scenario_id": 3,
+  "scenario_name": "scenario_03_same_week_threshold_anomaly",
+  "scenario_purpose": "Three PRs from same department in one week summing above threshold",
+  "expected_decision": "exception",
+  "expected_route": "Compliance/Procurement",
+  "expected_exception": "same_week_threshold_anomaly",
+  "expected_artifacts": [
+    "anomaly_report.json",
+    "bid_threshold_check.json",
+    "approval_packet.json",
+    "run_summary.csv"
+  ]
+}

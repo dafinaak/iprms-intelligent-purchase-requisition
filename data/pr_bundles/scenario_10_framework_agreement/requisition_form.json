@@ -1,0 +1,22 @@
+{
+  "pr_id": "PR-S10-001",
+  "requester": "Drita Berisha",
+  "department": "IT",
+  "cost_center": "CC-IT-001",
+  "vendor_name": "TechPlus",
+  "item_description": "Dell Latitude laptop",
+  "item_category": "IT Equipment",
+  "quantity": 3,
+  "unit_price": 900,
+  "estimated_amount": 2700,
+  "currency": "EUR",
+  "business_justification": "Purchase under existing framework agreement FW-IT-2026.",
+  "urgency": "normal",
+  "sole_source": false,
+  "emergency": false,
+  "framework_agreement": true,
+  "blanket_order": false,
+  "simulated_confidence_score": 0.96,
+  "requested_date": "2026-06-18",
+  "number_of_bids": 3
+}

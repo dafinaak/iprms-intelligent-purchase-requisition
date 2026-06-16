@@ -1,0 +1,22 @@
+{
+  "pr_id": "PR-S02-001",
+  "requester": "Drita Berisha",
+  "department": "IT",
+  "cost_center": "CC-IT-001",
+  "vendor_name": "QuickSupply",
+  "item_description": "Dell Latitude laptop",
+  "item_category": "IT Equipment",
+  "quantity": 2,
+  "unit_price": 900,
+  "estimated_amount": 1800,
+  "currency": "EUR",
+  "business_justification": "",
+  "urgency": "normal",
+  "sole_source": false,
+  "emergency": false,
+  "framework_agreement": false,
+  "blanket_order": false,
+  "simulated_confidence_score": 0.95,
+  "requested_date": "2026-06-15",
+  "number_of_bids": 3
+}
