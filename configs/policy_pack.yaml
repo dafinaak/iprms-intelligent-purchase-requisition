@@ -1,0 +1,44 @@
+# IPRMS — Policy Pack
+# Configurable procurement rules. Editing this file changes system behaviour
+# WITHOUT touching agent code. Consumed by Agent E, F, G and H.
+# (See plani.pdf §4 for the canonical schema.)
+
+# --- Approval thresholds (EUR) — Agent E ---
+approval_thresholds:
+  manager_limit: 1000
+  finance_limit: 5000
+  director_limit: 10000
+
+# --- Tolerances — Agent D (pricing variance) & Agent B/E (extraction confidence) ---
+tolerances:
+  catalogue_price_variance_percent: 5      # vendor price may differ from catalogue by <= 5%
+  extraction_confidence_minimum: 0.85      # below this -> low-confidence -> manual review
+
+# --- Routing rules — Agent H (where each exception is sent) ---
+routing:
+  budget_exhausted: FP&A
+  non_preferred_vendor: Procurement
+  split_order_detected: Compliance
+  low_confidence_extraction: Manual Review
+  emergency_sole_source: Expedited Approval
+
+# --- Bid rules — Agent F (bid threshold) & Agent G (threshold avoidance) ---
+bid_rules:
+  threshold_amount: 5000                   # PRs above this need competitive bids
+  minimum_required_bids: 3
+
+# --- Complex procurement feature flags — Agent E ---
+complex_procurement:
+  framework_agreements_enabled: true
+  blanket_orders_enabled: true
+  multi_currency_pos_enabled: true
+
+# --- Multi-currency PO rules — Agent E (Scenario 12) ---
+multi_currency:
+  allowed_currencies: [EUR, USD, GBP, CHF]
+  requires_approval_if_foreign: true       # non-default currency -> route for approval
+
+# --- Regional / currency defaults — Agent E ---
+regional_rules:
+  default_region: EU
+  default_currency: EUR
