@@ -1,0 +1,4 @@
+policy_name,threshold_amount,currency,required_approval
+manager_approval,1000,EUR,Manager
+finance_approval,5000,EUR,Finance
+director_approval,10000,EUR,Director

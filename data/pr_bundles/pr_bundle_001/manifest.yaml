@@ -1,0 +1,11 @@
+bundle_id: pr_bundle_001
+input_type: pdf
+requisition_file: requisition_form.pdf
+
+supporting_files:
+  budget_snapshot: budget_snapshot.csv
+  approved_vendors: approved_vendors.csv
+  catalogue_pricing: catalogue_pricing.csv
+  approval_policy: approval_policy.csv
+  cost_center_mapping: cost_center_mapping.csv
+  historical_prs: historical_prs.csv

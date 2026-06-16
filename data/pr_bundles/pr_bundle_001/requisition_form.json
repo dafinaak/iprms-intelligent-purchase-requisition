@@ -1,0 +1,22 @@
+{
+  "pr_id": "PR-2026-001",
+  "requester": "Arben Krasniqi",
+  "department": "IT",
+  "cost_center": "CC-IT-001",
+  "vendor_name": "Gjirafa Mall",
+  "item_description": "Wireless keyboard",
+  "item_category": "IT Equipment",
+  "quantity": 15,
+  "unit_price": 30,
+  "estimated_amount": 450,
+  "currency": "EUR",
+  "business_justification": "Replacement keyboards for IT support team.",
+  "urgency": "normal",
+  "sole_source": false,
+  "emergency": false,
+  "framework_agreement": false,
+  "blanket_order": false,
+  "simulated_confidence_score": 0.96,
+  "requested_date": "2026-06-10",
+  "number_of_bids": 3
+}

@@ -1,0 +1,6 @@
+vendor_id,vendor_name,approved_status,preferred_status,categories
+V001,Gjirafa Mall,approved,preferred,IT Equipment
+V002,OfficePro,approved,preferred,Office Supplies
+V003,QuickSupply,approved,non_preferred,IT Equipment
+V004,UnknownVendor,not_approved,non_preferred,IT Equipment
+V005,GlobalTech,approved,preferred,Software

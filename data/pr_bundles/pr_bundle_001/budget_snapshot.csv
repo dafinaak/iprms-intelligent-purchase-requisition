@@ -1,0 +1,5 @@
+cost_center,total_budget,used_budget,available_budget,currency
+CC-IT-001,10000,3000,7000,EUR
+CC-FIN-001,8000,2000,6000,EUR
+CC-HR-001,5000,1000,4000,EUR
+CC-OPS-001,12000,4000,8000,EUR
