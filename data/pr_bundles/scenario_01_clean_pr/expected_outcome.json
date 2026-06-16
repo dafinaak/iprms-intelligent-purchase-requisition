@@ -1,0 +1,13 @@
+{
+  "scenario_id": 1,
+  "scenario_name": "scenario_01_clean_pr",
+  "scenario_purpose": "Standard IT consumables from approved vendor within budget",
+  "expected_decision": "auto_po",
+  "expected_route": "none",
+  "expected_exception": "none",
+  "expected_artifacts": [
+    "po_draft.json",
+    "exceptions.md",
+    "run_summary.csv"
+  ]
+}

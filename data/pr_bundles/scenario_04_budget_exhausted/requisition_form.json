@@ -1,0 +1,22 @@
+{
+  "pr_id": "PR-S04-001",
+  "requester": "Arta Krasniqi",
+  "department": "IT",
+  "cost_center": "CC-IT-001",
+  "vendor_name": "TechPlus",
+  "item_description": "Dell Latitude laptop",
+  "item_category": "IT Equipment",
+  "quantity": 5,
+  "unit_price": 1400,
+  "estimated_amount": 7000,
+  "currency": "EUR",
+  "business_justification": "Replacement of damaged laptops.",
+  "urgency": "normal",
+  "sole_source": false,
+  "emergency": false,
+  "framework_agreement": false,
+  "blanket_order": false,
+  "simulated_confidence_score": 0.96,
+  "requested_date": "2026-06-16",
+  "number_of_bids": 3
+}

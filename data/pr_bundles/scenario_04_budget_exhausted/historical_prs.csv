@@ -1,0 +1,3 @@
+pr_id,department,cost_center,item_description,vendor_name,amount,currency,pr_date
+PR-HIST-001,Finance,CC-FIN-001,Printer paper A4,OfficePro,120,EUR,2026-05-20
+PR-HIST-002,HR,CC-HR-001,Printer toner cartridge,OfficePro,300,EUR,2026-05-22

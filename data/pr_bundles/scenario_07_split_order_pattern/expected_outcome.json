@@ -1,0 +1,14 @@
+{
+  "scenario_id": 7,
+  "scenario_name": "scenario_07_split_order_pattern",
+  "scenario_purpose": "Same item divided across 5 PRs",
+  "expected_decision": "exception",
+  "expected_route": "Compliance Review",
+  "expected_exception": "split_order_detected",
+  "expected_artifacts": [
+    "anomaly_report.json",
+    "exceptions.md",
+    "approval_packet.json",
+    "run_summary.csv"
+  ]
+}

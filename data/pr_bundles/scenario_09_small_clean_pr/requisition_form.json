@@ -1,0 +1,22 @@
+{
+  "pr_id": "PR-S09-001",
+  "requester": "Elira Shala",
+  "department": "HR",
+  "cost_center": "CC-HR-001",
+  "vendor_name": "OfficePro",
+  "item_description": "Printer paper A4",
+  "item_category": "Office Supplies",
+  "quantity": 30,
+  "unit_price": 5,
+  "estimated_amount": 150,
+  "currency": "EUR",
+  "business_justification": "Routine office supply purchase.",
+  "urgency": "low",
+  "sole_source": false,
+  "emergency": false,
+  "framework_agreement": false,
+  "blanket_order": false,
+  "simulated_confidence_score": 0.98,
+  "requested_date": "2026-06-17",
+  "number_of_bids": 3
+}

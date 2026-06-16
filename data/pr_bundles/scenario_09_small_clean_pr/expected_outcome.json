@@ -1,0 +1,13 @@
+{
+  "scenario_id": 9,
+  "scenario_name": "scenario_09_small_clean_pr",
+  "scenario_purpose": "Clean small consumables PR under threshold",
+  "expected_decision": "auto_approve",
+  "expected_route": "none",
+  "expected_exception": "none",
+  "expected_artifacts": [
+    "po_draft.json",
+    "exceptions.md",
+    "run_summary.csv"
+  ]
+}

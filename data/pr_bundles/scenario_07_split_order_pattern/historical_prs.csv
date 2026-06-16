@@ -1,0 +1,5 @@
+pr_id,department,cost_center,item_description,vendor_name,amount,currency,pr_date
+PR-HIST-S07-001,IT,CC-IT-001,Dell Latitude laptop,TechPlus,1200,EUR,2026-06-10
+PR-HIST-S07-002,IT,CC-IT-001,Dell Latitude laptop,TechPlus,1200,EUR,2026-06-11
+PR-HIST-S07-003,IT,CC-IT-001,Dell Latitude laptop,TechPlus,1200,EUR,2026-06-12
+PR-HIST-S07-004,IT,CC-IT-001,Dell Latitude laptop,TechPlus,1200,EUR,2026-06-13

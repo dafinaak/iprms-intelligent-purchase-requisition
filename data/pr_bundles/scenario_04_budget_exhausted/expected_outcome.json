@@ -1,0 +1,14 @@
+{
+  "scenario_id": 4,
+  "scenario_name": "scenario_04_budget_exhausted",
+  "scenario_purpose": "Budget exhausted for cost center",
+  "expected_decision": "blocked",
+  "expected_route": "FP&A",
+  "expected_exception": "budget_exhausted",
+  "expected_artifacts": [
+    "budget_check.json",
+    "po_draft.json",
+    "approval_packet.json",
+    "run_summary.csv"
+  ]
+}

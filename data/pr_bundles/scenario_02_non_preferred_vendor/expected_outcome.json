@@ -1,0 +1,15 @@
+{
+  "scenario_id": 2,
+  "scenario_name": "scenario_02_non_preferred_vendor",
+  "scenario_purpose": "Non-preferred vendor selected without written justification",
+  "expected_decision": "exception",
+  "expected_route": "Procurement",
+  "expected_exception": "non_preferred_vendor_without_justification",
+  "expected_artifacts": [
+    "vendor_match.json",
+    "policy_check.json",
+    "exceptions.md",
+    "approval_packet.json",
+    "run_summary.csv"
+  ]
+}

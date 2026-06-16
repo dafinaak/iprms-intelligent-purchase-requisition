@@ -1,0 +1,13 @@
+{
+  "scenario_id": 11,
+  "scenario_name": "scenario_11_blanket_order",
+  "scenario_purpose": "Blanket order PR",
+  "expected_decision": "policy_driven_handling",
+  "expected_route": "Configured Policy Routing",
+  "expected_exception": "blanket_order_flag",
+  "expected_artifacts": [
+    "policy_check.json",
+    "approval_packet.json",
+    "run_summary.csv"
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "scenario_id": 8,
+  "scenario_name": "scenario_08_low_confidence_extraction",
+  "scenario_purpose": "Low confidence on item specification extraction",
+  "expected_decision": "manual_review",
+  "expected_route": "Manual Review",
+  "expected_exception": "low_confidence_extraction",
+  "expected_artifacts": [
+    "extracted_pr.json",
+    "approval_packet.json",
+    "exceptions.md",
+    "run_summary.csv"
+  ]
+}

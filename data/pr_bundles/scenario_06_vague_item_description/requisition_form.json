@@ -1,0 +1,22 @@
+{
+  "pr_id": "PR-S06-001",
+  "requester": "Ilir Morina",
+  "department": "IT",
+  "cost_center": "CC-IT-001",
+  "vendor_name": "TechPlus",
+  "item_description": "IT equipment",
+  "item_category": "IT Equipment",
+  "quantity": 3,
+  "unit_price": 1200,
+  "estimated_amount": 3600,
+  "currency": "EUR",
+  "business_justification": "Needed for team equipment refresh.",
+  "urgency": "normal",
+  "sole_source": false,
+  "emergency": false,
+  "framework_agreement": false,
+  "blanket_order": false,
+  "simulated_confidence_score": 0.91,
+  "requested_date": "2026-06-16",
+  "number_of_bids": 3
+}
