@@ -1,9 +1,10 @@
 # IPRMS — core dependencies
-# Pin/loosen versions as needed once the Databricks runtime is fixed.
+# Standalone deterministic Python pipeline. No cloud platform required for core scope.
 
 # --- Data processing ---
 pandas>=2.0
-pyspark>=3.5
+# PySpark is optional, only if the team wants larger-scale local data processing
+# pyspark>=3.5
 
 # --- Schema validation ---
 pydantic>=2.5
@@ -12,15 +13,12 @@ pydantic>=2.5
 PyYAML>=6.0
 
 # --- Document extraction ---
-# Azure AI Document Intelligence = primary OCR/extraction engine
-azure-ai-documentintelligence>=1.0.0
-azure-core>=1.30
-# Fallback parsers for clean digital PDFs
+# PyMuPDF / pdfplumber for clean digital PDFs
 pymupdf>=1.24
 pdfplumber>=0.11
-
-# --- Storage / Delta (Databricks) ---
-delta-spark>=3.1
+# OCR engine for scanned PDFs
+pytesseract>=0.3.10
+Pillow>=10.0
 
 # --- API ---
 fastapi>=0.110
@@ -36,7 +34,5 @@ pytest>=8.0
 # --- Optional: LangGraph internal A→H wrapper (project must work without it) ---
 langgraph>=0.2
 
-# --- Optional: LangChain / Azure OpenAI Agent B fallback (project must work without it) ---
+# --- Optional: LangChain / LLM Agent B fallback (project must work without it) ---
 langchain>=0.2
-langchain-openai>=0.1
-openai>=1.30
