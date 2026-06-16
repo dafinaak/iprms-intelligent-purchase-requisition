@@ -1,0 +1,22 @@
+{
+  "pr_id": "PR-S05-001",
+  "requester": "Nora Selimi",
+  "department": "Operations",
+  "cost_center": "CC-OPS-001",
+  "vendor_name": "EmergencyParts",
+  "item_description": "Replacement production controller",
+  "item_category": "Industrial Equipment",
+  "quantity": 1,
+  "unit_price": 4800,
+  "estimated_amount": 4800,
+  "currency": "EUR",
+  "business_justification": "Critical equipment failure. Immediate replacement is required to restore production.",
+  "urgency": "emergency",
+  "sole_source": true,
+  "emergency": true,
+  "framework_agreement": false,
+  "blanket_order": false,
+  "simulated_confidence_score": 0.94,
+  "requested_date": "2026-06-16",
+  "number_of_bids": 1
+}

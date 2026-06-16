@@ -1,0 +1,14 @@
+{
+  "scenario_id": 12,
+  "scenario_name": "scenario_12_multi_currency",
+  "scenario_purpose": "Multi-currency PR / PO",
+  "expected_decision": "policy_validation",
+  "expected_route": "Finance/Procurement",
+  "expected_exception": "multi_currency_flag",
+  "expected_artifacts": [
+    "policy_check.json",
+    "po_draft.json",
+    "approval_packet.json",
+    "run_summary.csv"
+  ]
+}

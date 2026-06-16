@@ -1,0 +1,22 @@
+{
+  "pr_id": "PR-S03-004",
+  "requester": "Luan Gashi",
+  "department": "Operations",
+  "cost_center": "CC-OPS-001",
+  "vendor_name": "OfficePro",
+  "item_description": "Office chair ergonomic",
+  "item_category": "Office Supplies",
+  "quantity": 10,
+  "unit_price": 200,
+  "estimated_amount": 2000,
+  "currency": "EUR",
+  "business_justification": "Additional office chairs for operations team.",
+  "urgency": "normal",
+  "sole_source": false,
+  "emergency": false,
+  "framework_agreement": false,
+  "blanket_order": false,
+  "simulated_confidence_score": 0.96,
+  "requested_date": "2026-06-13",
+  "number_of_bids": 2
+}

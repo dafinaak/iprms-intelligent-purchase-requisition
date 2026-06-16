@@ -1,0 +1,4 @@
+pr_id,department,cost_center,item_description,vendor_name,amount,currency,pr_date
+PR-HIST-S03-001,Operations,CC-OPS-001,Office chair ergonomic,OfficePro,1500,EUR,2026-06-10
+PR-HIST-S03-002,Operations,CC-OPS-001,Desk lamp,OfficePro,1200,EUR,2026-06-11
+PR-HIST-S03-003,Operations,CC-OPS-001,Whiteboard,OfficePro,900,EUR,2026-06-12

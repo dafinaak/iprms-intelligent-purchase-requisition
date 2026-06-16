@@ -1,0 +1,22 @@
+{
+  "pr_id": "PR-S07-005",
+  "requester": "Luan Gashi",
+  "department": "IT",
+  "cost_center": "CC-IT-001",
+  "vendor_name": "TechPlus",
+  "item_description": "Dell Latitude laptop",
+  "item_category": "IT Equipment",
+  "quantity": 1,
+  "unit_price": 1200,
+  "estimated_amount": 1200,
+  "currency": "EUR",
+  "business_justification": "Laptop purchase for new employee.",
+  "urgency": "normal",
+  "sole_source": false,
+  "emergency": false,
+  "framework_agreement": false,
+  "blanket_order": false,
+  "simulated_confidence_score": 0.96,
+  "requested_date": "2026-06-14",
+  "number_of_bids": 2
+}

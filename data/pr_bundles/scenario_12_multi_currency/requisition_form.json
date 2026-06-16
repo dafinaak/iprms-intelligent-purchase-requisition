@@ -1,0 +1,22 @@
+{
+  "pr_id": "PR-S12-001",
+  "requester": "Besa Hoxha",
+  "department": "Finance",
+  "cost_center": "CC-FIN-001",
+  "vendor_name": "GlobalTech",
+  "item_description": "Cloud software license",
+  "item_category": "Software",
+  "quantity": 1,
+  "unit_price": 2500,
+  "estimated_amount": 2500,
+  "currency": "USD",
+  "business_justification": "Annual cloud software license renewal.",
+  "urgency": "normal",
+  "sole_source": false,
+  "emergency": false,
+  "framework_agreement": false,
+  "blanket_order": false,
+  "simulated_confidence_score": 0.95,
+  "requested_date": "2026-06-18",
+  "number_of_bids": 3
+}

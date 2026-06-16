@@ -1,0 +1,14 @@
+{
+  "scenario_id": 6,
+  "scenario_name": "scenario_06_vague_item_description",
+  "scenario_purpose": "Item description too vague for pricing",
+  "expected_decision": "exception",
+  "expected_route": "Buyer Clarification",
+  "expected_exception": "vague_item_description",
+  "expected_artifacts": [
+    "extracted_pr.json",
+    "vendor_match.json",
+    "exceptions.md",
+    "run_summary.csv"
+  ]
+}
