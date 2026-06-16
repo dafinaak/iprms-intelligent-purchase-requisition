@@ -86,8 +86,37 @@ uvicorn api.main:app --reload
 Install it separately and, if it is not on your `PATH`, set `TESSERACT_CMD` in `.env`.
 Digital-PDF parsing (PyMuPDF / pdfplumber) needs no system dependency.
 
-Each run produces a `runs/<run_id>/` directory containing all mandatory artifacts (JSON,
-Markdown, and CSV), available locally for review, audit analysis, and demo reporting.
+## Run artifacts
+
+Every run stores all its outputs locally under `runs/<run_id>/` as JSON, Markdown and CSV,
+available for review, audit analysis, and demo reporting. The run directory is resolved from
+the repo root (see `configs/config.py` → `RUNS_DIR`), so it is always created in the same place
+regardless of the current working directory.
+
+```
+runs/<run_id>/
+├── context_packet.json        # Agent A
+├── evidence_index.json        # Agent A
+├── extracted_pr.json          # Agent B
+├── budget_check.json          # Agent C
+├── vendor_match.json          # Agent D
+├── policy_check.json          # Agent E
+├── sole_source_check.json     # Agent F
+├── bid_threshold_check.json   # Agent F
+├── anomaly_report.json        # Agent G
+├── exceptions.md              # Agent H
+├── approval_packet.json       # Agent H
+├── po_draft.json              # Agent H
+├── audit_log.md               # Agent H
+├── metrics.json               # Agent H
+├── run_summary.csv            # Agent H
+├── tracker_payload.json       # tracker stub (if exceptions exist)
+└── erp_posting_result.json    # ERP API stub
+```
+
+Artifacts are written through `artifact_store.ArtifactStore`, which centralises path resolution
+and writing (`write_json` / `write_markdown` / `write_csv` / `write_run_summary`) so all agents
+use one consistent layout.
 
 ## Deployment
 
