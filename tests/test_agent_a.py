@@ -8,11 +8,13 @@ from agents.agent_a_intake_context import (
     AgentAResult,
     _compute_input_hash,
     _generate_run_id,
+    classify_pr_type_metadata,
     run,
 )
 from configs.config import PR_BUNDLES_DIR
 from manifest_validation import ManifestValidationError, validate_bundle
 from schemas.finding_schema import Finding
+from schemas.pr_schema import ClassificationSource, PRType
 
 BUNDLE = PR_BUNDLES_DIR / "pr_bundle_001"
 FIXED = datetime(2026, 6, 16, 14, 30, 22, tzinfo=timezone.utc)
@@ -101,3 +103,68 @@ def test_compute_input_hash_changes_with_content(tmp_path):
     changed = validate_bundle(dst)
     h2 = _compute_input_hash(changed, base.requisition_path.parent / "..nonexistent.yaml")
     assert h1 != h2  # different bundle content -> different hash
+
+
+# ---------- PR-type classification (Task 4 updated) ----------
+POLICY = {"approval_thresholds": {"director_limit": 10000}}
+
+
+def test_classify_metadata_standard_emergency_capex():
+    assert classify_pr_type_metadata({"item_category": "IT Equipment", "estimated_amount": 450},
+                                     POLICY)[0] == PRType.STANDARD
+    assert classify_pr_type_metadata({"emergency": True}, POLICY)[0] == PRType.EMERGENCY
+    assert classify_pr_type_metadata({"urgency": "emergency"}, POLICY)[0] == PRType.EMERGENCY
+    assert classify_pr_type_metadata({"item_category": "x", "estimated_amount": 12000},
+                                     POLICY)[0] == PRType.CAPEX
+    # insufficient metadata -> None
+    assert classify_pr_type_metadata({}, POLICY) == (None, 0.0)
+
+
+def test_run_sets_pr_type_from_metadata(tmp_path):
+    res = run(BUNDLE, runs_root=tmp_path, when=FIXED)
+    c = res.classification
+    assert c.pr_type == PRType.STANDARD            # pr_bundle_001 metadata
+    assert c.source == ClassificationSource.METADATA
+    assert c.llm_fallback_used is False
+    cp = res.context_packet
+    assert cp["pr_type"] == "standard"
+    assert cp["pr_type_source"] == "metadata"
+    assert cp["llm_fallback_used"] is False
+    assert cp["llm_fallback_trace"] is None
+    assert not (res.run_dir / "llm_fallback_trace.json").exists()  # no fallback -> no trace
+
+
+def test_emergency_scenario_classified(tmp_path):
+    bundle = PR_BUNDLES_DIR / "scenario_05_emergency_sole_source"
+    res = run(bundle, runs_root=tmp_path, when=FIXED)
+    assert res.classification.pr_type == PRType.EMERGENCY
+    assert res.classification.source == ClassificationSource.METADATA
+
+
+def test_llm_fallback_only_when_metadata_insufficient(tmp_path):
+    # Copy bundle and remove the JSON metadata so deterministic rules cannot classify.
+    dst = tmp_path / "bundle"
+    shutil.copytree(BUNDLE, dst)
+    (dst / "requisition_form.json").unlink()  # sibling metadata removed (not in manifest)
+
+    # No fallback available -> DEFAULT, no trace file.
+    res = run(dst, runs_root=tmp_path / "r1", when=FIXED)
+    assert res.classification.source == ClassificationSource.DEFAULT
+    assert res.classification.pr_type == PRType.STANDARD
+    assert not (res.run_dir / "llm_fallback_trace.json").exists()
+
+    # Injected classifier (mock LLM) -> LLM source + trace written.
+    res2 = run(dst, runs_root=tmp_path / "r2", when=FIXED,
+               pr_type_classifier=lambda meta: "emergency")
+    assert res2.classification.source == ClassificationSource.LLM
+    assert res2.classification.pr_type == PRType.EMERGENCY
+    assert res2.classification.llm_fallback_used is True
+    assert (res2.run_dir / "llm_fallback_trace.json").exists()
+    assert res2.context_packet["llm_fallback_trace"] == "llm_fallback_trace.json"
+
+
+def test_classification_deterministic_without_llm(tmp_path):
+    a = run(BUNDLE, runs_root=tmp_path / "a", when=FIXED)
+    b = run(BUNDLE, runs_root=tmp_path / "b", when=FIXED)
+    assert a.context_packet["pr_type"] == b.context_packet["pr_type"]
+    assert a.llm_fallback_used is False and b.llm_fallback_used is False

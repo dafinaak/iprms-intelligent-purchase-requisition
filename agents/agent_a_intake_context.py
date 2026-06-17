@@ -5,26 +5,30 @@ Agent A is the entry point of the pipeline (plani.pdf §6). It:
      blocked before any processing happens;
   2. detects the input type (PDF / scanned PDF / JSON / web form) from the
      manifest;
-  3. generates a run_id and creates runs/<run_id>/;
-  4. builds context_packet.json and evidence_index.json (its mandatory outputs);
-  5. performs initial, intake-level risk filtering, reported as Findings in the
-     Unified Findings Schema so Agent H can later merge them.
+  3. classifies the PR type (standard / emergency / capex) from deterministic
+     metadata first; a controlled LLM fallback may only SUGGEST a type when the
+     metadata is insufficient (§4.1) and never decides routing/approval/budget/
+     vendor/compliance/anomaly/PO rules;
+  4. generates a run_id and creates runs/<run_id>/;
+  5. builds context_packet.json and evidence_index.json (mandatory outputs), plus
+     llm_fallback_trace.json only when the Agent A fallback is used;
+  6. performs initial, intake-level risk filtering as Findings.
 
-Standalone & deterministic: Agent A reads the manifest and the bundle files only.
-It does NOT parse the requisition document — that is Agent B's job — so it stays
-decoupled from the extraction/OCR layer (input_reader.py).
+Standalone & deterministic: Agent A reads the manifest, the bundle files, and the
+structured PR metadata (requisition JSON) only. It does NOT OCR/parse the PDF
+document — that is Agent B's job. With the LLM fallback disabled, classification
+is fully deterministic.
 """
 from __future__ import annotations
 
 import hashlib
+import json
 import sys
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
-# Make the repo root importable when this module is run directly as a script
-# (python agents/agent_a_intake_context.py). Tests use conftest.py instead.
 _REPO_ROOT = str(Path(__file__).resolve().parents[1])
 if _REPO_ROOT not in sys.path:
     sys.path.insert(0, _REPO_ROOT)
@@ -38,8 +42,21 @@ from manifest_validation import (
     validate_bundle,
 )
 from schemas.finding_schema import Finding, FindingStatus, Severity
+from schemas.pr_schema import (
+    ClassificationSource,
+    LLMFallbackTrace,
+    PRType,
+    PRTypeClassification,
+)
 
 SOURCE_AGENT = "Agent A"
+
+# Item categories that indicate capital expenditure (capex).
+CAPEX_CATEGORIES = {
+    "capital equipment", "machinery", "vehicle", "infrastructure",
+    "capex", "asset", "building", "capital",
+}
+EMERGENCY_URGENCIES = {"emergency", "urgent", "critical"}
 
 
 @dataclass
@@ -53,6 +70,8 @@ class AgentAResult:
     context_packet: Dict[str, Any]
     evidence_index: Dict[str, Any]
     findings: List[Finding] = field(default_factory=list)
+    classification: Optional[PRTypeClassification] = None
+    llm_fallback_used: bool = False
 
 
 # ---------- helpers ----------
@@ -95,13 +114,84 @@ def _compute_input_hash(result: ValidationResult, policy_pack: Path) -> str:
 
 
 def _generate_run_id(input_hash: str, when: Optional[datetime] = None) -> str:
-    """RUN-<UTC timestamp>-<input_hash prefix>.
-
-    The timestamp keeps run_ids unique across runs; the hash prefix ties the id to
-    the inputs and aids quick visual idempotency checks.
-    """
+    """RUN-<UTC timestamp>-<input_hash prefix>."""
     when = when or datetime.now(timezone.utc)
     return f"RUN-{when:%Y%m%dT%H%M%SZ}-{input_hash[:8]}"
+
+
+def _load_metadata(result: ValidationResult) -> Dict[str, Any]:
+    """Load structured PR metadata (the requisition JSON) for classification.
+
+    This is metadata only — NOT document OCR/parsing (Agent B's job). Returns {}
+    when no structured metadata is available (e.g. a PDF-only bundle, no JSON).
+    """
+    req = Path(result.requisition_path)
+    candidate = req if req.suffix.lower() == ".json" else req.with_suffix(".json")
+    if candidate.exists():
+        try:
+            data = json.loads(candidate.read_text(encoding="utf-8"))
+            return data if isinstance(data, dict) else {}
+        except Exception:
+            return {}
+    return {}
+
+
+def classify_pr_type_metadata(
+    metadata: Dict[str, Any], policy: Dict[str, Any]
+) -> Tuple[Optional[PRType], float]:
+    """Deterministic PR-type classification from metadata.
+
+    Returns (PRType, confidence) or (None, 0.0) when metadata is insufficient.
+    """
+    if not metadata:
+        return None, 0.0
+
+    urgency = str(metadata.get("urgency", "")).strip().lower()
+    if bool(metadata.get("emergency")) or urgency in EMERGENCY_URGENCIES:
+        return PRType.EMERGENCY, 0.95
+
+    category = str(metadata.get("item_category", "")).strip().lower()
+    try:
+        amount = float(metadata.get("estimated_amount") or 0)
+    except (TypeError, ValueError):
+        amount = 0.0
+    capex_threshold = float(policy.get("approval_thresholds", {}).get("director_limit", 10000))
+    if category in CAPEX_CATEGORIES or amount >= capex_threshold:
+        return PRType.CAPEX, 0.9
+
+    if category or urgency:
+        return PRType.STANDARD, 0.9
+    return None, 0.0  # not enough signal
+
+
+def _maybe_llm_pr_type(
+    metadata: Dict[str, Any], classifier: Optional[Callable[[Dict[str, Any]], Any]]
+) -> Tuple[Optional[PRType], bool, Optional[str]]:
+    """Controlled LLM fallback for PR-type. Off by default; returns (type, used, model).
+
+    The LLM may only SUGGEST a type. No-op (returns None, False, None) when
+    disabled or unavailable, keeping classification deterministic.
+    """
+    def _coerce(val: Any) -> Optional[PRType]:
+        try:
+            return val if isinstance(val, PRType) else PRType(str(val).strip().lower())
+        except Exception:
+            return None
+
+    if classifier is not None:  # injected (tests)
+        try:
+            return _coerce(classifier(metadata)), True, "injected"
+        except Exception:
+            return None, False, None
+
+    import os
+    if os.environ.get("IPRMS_LLM_FALLBACK_ENABLED", "").lower() not in ("1", "true", "yes"):
+        return None, False, None
+    try:
+        from llm.pr_type_classifier import classify_pr_type as llm_classify  # optional
+        return _coerce(llm_classify(metadata)), True, "llm"
+    except Exception:
+        return None, False, None
 
 
 def _build_evidence_index(
@@ -139,18 +229,12 @@ def _build_evidence_index(
 def _initial_risk_filter(
     input_type: str, evidence_index: Dict[str, Any]
 ) -> List[Finding]:
-    """Lightweight, intake-level risk flags — no extraction is performed here.
-
-    These are early signals (evidence-first) that downstream agents and Agent H
-    can act on; they never decide approval/routing themselves.
-    """
+    """Lightweight, intake-level risk flags — no extraction is performed here."""
     findings: List[Finding] = []
 
     def _next_id() -> str:
         return f"F-A-{len(findings) + 1:03d}"
 
-    # Input-type risk: scanned PDFs depend on OCR and tend to extract with lower
-    # confidence; flag so a low-confidence/manual-review path is possible later.
     if input_type == "scanned_pdf":
         findings.append(Finding(
             finding_id=_next_id(),
@@ -176,8 +260,6 @@ def _initial_risk_filter(
             status=FindingStatus.OPEN,
         ))
 
-    # Data-integrity risk: any zero-byte evidence file means a supporting input is
-    # effectively missing even though the file exists.
     for ev in evidence_index["evidence"]:
         if ev["exists"] and ev["size_bytes"] == 0:
             findings.append(Finding(
@@ -203,20 +285,12 @@ def run(
     runs_root: Path | str = RUNS_ROOT,
     policy_pack: Path | str = POLICY_PACK,
     when: Optional[datetime] = None,
+    pr_type_classifier: Optional[Callable[[Dict[str, Any]], Any]] = None,
 ) -> AgentAResult:
     """Run Agent A on a PR bundle.
 
     Gatekeeper: the bundle is validated first; an invalid bundle raises
-    ManifestValidationError and NO run directory is created. On success the run
-    directory and both mandatory artifacts are written.
-
-    Args:
-        bundle_dir: path to the PR bundle (folder containing manifest.yaml).
-        run_id: optional explicit run id (deterministic runs / tests). If omitted
-            it is generated from the timestamp + input hash.
-        runs_root: root under which runs/<run_id>/ is created.
-        policy_pack: policy_pack.yaml, folded into the input hash (§13).
-        when: optional fixed timestamp for deterministic run_id generation.
+    ManifestValidationError and NO run directory is created.
     """
     bundle_dir = Path(bundle_dir)
     policy_pack = Path(policy_pack)
@@ -233,17 +307,46 @@ def run(
     # 2. Identity: deterministic input hash, then a run_id.
     input_hash = _compute_input_hash(result, policy_pack)
     run_id = run_id or _generate_run_id(input_hash, when)
-
-    # 3. Create runs/<run_id>/.
     store = ArtifactStore(run_id, root=runs_root)
 
-    # 4. Evidence index (mandatory output).
-    evidence_index = _build_evidence_index(run_id, manifest, result)
+    # 3. PR-type classification — deterministic metadata first, controlled LLM fallback.
+    import yaml
+    policy: Dict[str, Any] = {}
+    if policy_pack.exists():
+        policy = yaml.safe_load(policy_pack.read_text(encoding="utf-8")) or {}
+    metadata = _load_metadata(result)
 
-    # 5. Initial risk filtering.
+    pr_type, conf = classify_pr_type_metadata(metadata, policy)
+    trace: Optional[LLMFallbackTrace] = None
+    if pr_type is not None:
+        source = ClassificationSource.METADATA
+        llm_used = False
+    else:
+        candidate, llm_used, model = _maybe_llm_pr_type(metadata, pr_type_classifier)
+        if llm_used and candidate is not None:
+            pr_type, source, conf = candidate, ClassificationSource.LLM, 0.7
+            trace = LLMFallbackTrace(
+                source_agent=SOURCE_AGENT,
+                fallback_type="pr_type_classification",
+                used=True,
+                reason="PR metadata insufficient to classify standard/emergency/capex.",
+                confidence=conf,
+                model=model,
+                normalized_candidate=pr_type.value,
+                original_evidence="context_packet.json",
+            )
+        else:
+            pr_type, source, conf = PRType.STANDARD, ClassificationSource.DEFAULT, 0.5
+
+    classification = PRTypeClassification(
+        pr_type=pr_type, source=source, confidence=conf, llm_fallback_used=llm_used
+    )
+
+    # 4. Evidence index + initial risk filtering.
+    evidence_index = _build_evidence_index(run_id, manifest, result)
     findings = _initial_risk_filter(input_type, evidence_index)
 
-    # 6. Context packet (mandatory output).
+    # 5. Context packet (mandatory output).
     created_at = (when or datetime.now(timezone.utc)).strftime("%Y-%m-%dT%H:%M:%SZ")
     context_packet: Dict[str, Any] = {
         "run_id": run_id,
@@ -255,13 +358,20 @@ def run(
         "input_hash": input_hash,
         "created_at": created_at,
         "gatekeeper": {"manifest_valid": True, "errors": []},
+        "pr_type": classification.pr_type.value,
+        "pr_type_source": classification.source.value,
+        "pr_type_confidence": classification.confidence,
+        "llm_fallback_used": classification.llm_fallback_used,
+        "llm_fallback_trace": "llm_fallback_trace.json" if trace is not None else None,
         "initial_risk_flags": [f.model_dump(mode="json") for f in findings],
         "source_agent": SOURCE_AGENT,
     }
 
-    # Persist mandatory artifacts.
+    # 6. Persist artifacts (trace only when the fallback actually ran).
     store.write_json("context_packet.json", context_packet)
     store.write_json("evidence_index.json", evidence_index)
+    if trace is not None:
+        store.write_json("llm_fallback_trace.json", trace.model_dump(mode="json"))
 
     return AgentAResult(
         run_id=run_id,
@@ -271,6 +381,8 @@ def run(
         context_packet=context_packet,
         evidence_index=evidence_index,
         findings=findings,
+        classification=classification,
+        llm_fallback_used=classification.llm_fallback_used,
     )
 
 
@@ -288,9 +400,12 @@ def _main(argv: Optional[List[str]] = None) -> int:
         print(f"[Agent A] BLOCKED - {e}")
         return 1
 
+    c = res.classification
     print(f"[Agent A] run_id={res.run_id}")
     print(f"[Agent A] run_dir={res.run_dir}")
     print(f"[Agent A] input_type={res.input_type}  input_hash={res.input_hash[:12]}...")
+    print(f"[Agent A] pr_type={c.pr_type.value} (source={c.source.value}, conf={c.confidence})")
+    print(f"[Agent A] llm_fallback_used={res.llm_fallback_used}")
     print(f"[Agent A] evidence files indexed: {res.evidence_index['evidence_count']}")
     print(f"[Agent A] initial risk flags: {len(res.findings)}")
     for f in res.findings:
