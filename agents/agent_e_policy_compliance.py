@@ -50,6 +50,26 @@ def _to_float(value: Any, default: float = 0.0) -> float:
         return default
 
 
+def _evidence_path(ares: AgentAResult, role: str) -> Path:
+    for ev in ares.evidence_index.get("evidence", []):
+        if ev.get("role") == role:
+            return Path(ev["path"])
+    raise KeyError(f"evidence role not found: {role}")
+
+
+def _load_metadata(ares: AgentAResult) -> Dict[str, Any]:
+    """Structured requisition metadata (framework_agreement / blanket_order / emergency)."""
+    req = _evidence_path(ares, "requisition")
+    candidate = req if req.suffix.lower() == ".json" else req.with_suffix(".json")
+    if candidate.exists():
+        try:
+            data = json.loads(candidate.read_text(encoding="utf-8"))
+            return data if isinstance(data, dict) else {}
+        except Exception:
+            return {}
+    return {}
+
+
 def _approval_level(amount: float, thresholds: Dict[str, Any]) -> str:
     manager = _to_float(thresholds.get("manager_limit"), 1000)
     finance = _to_float(thresholds.get("finance_limit"), 5000)
@@ -77,6 +97,8 @@ def run(ares: AgentAResult, *, policy: Optional[Dict[str, Any]] = None) -> Agent
     pr_id = _field_value(extracted, "pr_id") or ""
     amount = _to_float(_field_value(extracted, "estimated_amount"))
     urgency = str(_field_value(extracted, "urgency") or "")
+    currency = str(_field_value(extracted, "currency") or "")
+    meta = _load_metadata(ares)
 
     if policy is None:
         import yaml
@@ -136,7 +158,62 @@ def run(ares: AgentAResult, *, policy: Optional[Dict[str, Any]] = None) -> Agent
             status=FindingStatus.OPEN,
         ))
 
-    manual_approval_required = bool(violations) or amount > manager_limit
+    # ---- Complex procurement checks (Task 24) ----
+    complex_cfg = policy.get("complex_procurement", {})
+    mc_cfg = policy.get("multi_currency", {})
+    default_currency = policy.get("regional_rules", {}).get("default_currency", "EUR")
+
+    framework_agreement_flag = bool(meta.get("framework_agreement")) and bool(
+        complex_cfg.get("framework_agreements_enabled", True))
+    blanket_order_flag = bool(meta.get("blanket_order")) and bool(
+        complex_cfg.get("blanket_orders_enabled", True))
+    emergency_procurement_flag = bool(meta.get("emergency")) or urgency.strip().lower() == "emergency"
+    multi_currency_flag = bool(complex_cfg.get("multi_currency_pos_enabled", True)) and bool(
+        currency) and currency != default_currency
+
+    requires_currency_approval = multi_currency_flag and bool(mc_cfg.get("requires_approval_if_foreign", True))
+
+    if framework_agreement_flag:
+        findings.append(Finding(
+            finding_id=f"F-E-{len(findings) + 1:03d}",
+            finding_type="FRAMEWORK_AGREEMENT", severity=Severity.LOW, confidence=0.9,
+            message="PR falls under a framework agreement; policy-driven handling.",
+            evidence=["policy_check.json"], source_agent=SOURCE_AGENT,
+            recommended_action="Apply configured framework-agreement routing.",
+            status=FindingStatus.OPEN,
+        ))
+    if blanket_order_flag:
+        findings.append(Finding(
+            finding_id=f"F-E-{len(findings) + 1:03d}",
+            finding_type="BLANKET_ORDER", severity=Severity.LOW, confidence=0.9,
+            message="PR falls under a blanket order; policy-driven handling.",
+            evidence=["policy_check.json"], source_agent=SOURCE_AGENT,
+            recommended_action="Apply configured blanket-order routing.",
+            status=FindingStatus.OPEN,
+        ))
+    if emergency_procurement_flag:
+        findings.append(Finding(
+            finding_id=f"F-E-{len(findings) + 1:03d}",
+            finding_type="EMERGENCY_PROCUREMENT", severity=Severity.MEDIUM, confidence=0.9,
+            message="Emergency procurement; expedited approval path required.",
+            evidence=["policy_check.json"], source_agent=SOURCE_AGENT,
+            recommended_action="Route to expedited approval.",
+            status=FindingStatus.OPEN,
+        ))
+    if requires_currency_approval:
+        findings.append(Finding(
+            finding_id=f"F-E-{len(findings) + 1:03d}",
+            finding_type="MULTI_CURRENCY", severity=Severity.MEDIUM, confidence=0.9,
+            message=f"Foreign currency {currency} (default {default_currency}) requires approval.",
+            evidence=["policy_check.json"], source_agent=SOURCE_AGENT,
+            recommended_action="Route for multi-currency approval.",
+            status=FindingStatus.OPEN,
+        ))
+
+    manual_approval_required = (
+        bool(violations) or amount > manager_limit
+        or emergency_procurement_flag or requires_currency_approval
+    )
     compliance_status = "violation" if violations else "compliant"
 
     if manual_approval_required and not violations:
@@ -161,8 +238,11 @@ def run(ares: AgentAResult, *, policy: Optional[Dict[str, Any]] = None) -> Agent
         budget_ok=budget_ok,
         urgency=urgency,
         violations=violations,
+        framework_agreement_flag=framework_agreement_flag,
+        blanket_order_flag=blanket_order_flag,
+        emergency_procurement_flag=emergency_procurement_flag,
+        multi_currency_flag=multi_currency_flag,
         findings=findings,
-        # framework/blanket/emergency/multi_currency flags -> default False (Task 24)
     )
 
     store = ArtifactStore(ares.run_id, root=run_dir.parent)
