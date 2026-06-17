@@ -69,3 +69,31 @@ def test_extracted_pr_json_is_valid_schema(tmp_path):
     # per-field provenance shape + overall score present
     assert data["vendor_name"]["value"] == "Gjirafa Mall"
     assert "confidence_score" in data
+
+
+def test_llm_fields_off_by_default(tmp_path):
+    _ares, res = _run_b("pr_bundle_001", tmp_path)
+    assert res.llm_fallback_used is False
+    assert res.llm_normalized_candidate is None
+    data = json.loads(res.extracted_path.read_text(encoding="utf-8"))
+    assert data["llm_fallback_used"] is False
+    assert data["llm_normalized_candidate"] is None
+    assert not (res.extracted_path.parent / "llm_fallback_trace.json").exists()
+
+
+def test_llm_normalizes_vague_without_overwriting_original(tmp_path):
+    # Inject a mock LLM; vague "IT equipment" gets a normalized candidate.
+    _ares, res = _run_b("scenario_06_vague_item_description", tmp_path,
+                        llm_fallback=lambda text: "Dell business laptop")
+    # Original parser/OCR value stays authoritative (NOT overwritten).
+    assert res.extracted_pr.item_description.value == "IT equipment"
+    # Normalized candidate stored separately + flag set.
+    assert res.llm_fallback_used is True
+    assert res.extracted_pr.llm_normalized_candidate == "Dell business laptop"
+    # Audit trace written.
+    trace_path = res.extracted_path.parent / "llm_fallback_trace.json"
+    assert trace_path.exists()
+    trace = json.loads(trace_path.read_text(encoding="utf-8"))
+    assert trace["fallback_type"] == "item_extraction" and trace["used"] is True
+    # Vague finding still raised deterministically.
+    assert any(f.finding_type == "VAGUE_ITEM_DESCRIPTION" for f in res.findings)

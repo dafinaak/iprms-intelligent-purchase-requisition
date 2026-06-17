@@ -35,7 +35,7 @@ from artifact_store import ArtifactStore
 from configs.config import POLICY_PACK
 from input_reader import ReaderResult, read_input, read_json, read_web_form
 from schemas.finding_schema import Finding, FindingStatus, Severity
-from schemas.pr_schema import ExtractedField, ExtractedPR
+from schemas.pr_schema import ExtractedField, ExtractedPR, LLMFallbackTrace
 
 SOURCE_AGENT = "Agent B"
 
@@ -62,6 +62,7 @@ class AgentBResult:
     extracted_path: Path
     findings: List[Finding] = field(default_factory=list)
     llm_fallback_used: bool = False
+    llm_normalized_candidate: Optional[str] = None
 
 
 # ---------- helpers ----------
@@ -199,12 +200,17 @@ def run(
         default=0.99,
     )
 
-    # Optional LLM fallback ONLY for a genuinely unclear (empty) item description.
+    # Controlled LLM fallback (§4.1): ONLY for an unclear (empty) or vague item
+    # description. It may only produce a normalized CANDIDATE — the original
+    # parser/OCR value, confidence and bbox stay authoritative and are NEVER
+    # overwritten, and the candidate never drives a procurement decision.
+    orig_desc = str(values.get("item_description", "")).strip()
     llm_used = False
-    if not str(values.get("item_description", "")).strip():
-        suggestion, llm_used = _maybe_llm_normalize("", llm_fallback)
-        if suggestion:
-            values["item_description"] = suggestion
+    normalized_candidate: Optional[str] = None
+    if not orig_desc or _is_vague(orig_desc):
+        suggestion, llm_used = _maybe_llm_normalize(orig_desc, llm_fallback)
+        if llm_used and suggestion and suggestion.strip() and suggestion.strip() != orig_desc:
+            normalized_candidate = suggestion.strip()
 
     # Build ExtractedPR: values from JSON, bboxes from PDF.
     extracted_fields: Dict[str, ExtractedField] = {}
@@ -219,7 +225,12 @@ def run(
             value=caster(raw), confidence=confidence, source_page=page, bounding_box=bbox
         )
 
-    extracted = ExtractedPR(confidence_score=confidence, **extracted_fields)
+    extracted = ExtractedPR(
+        confidence_score=confidence,
+        llm_fallback_used=llm_used,
+        llm_normalized_candidate=normalized_candidate,
+        **extracted_fields,
+    )
 
     # Findings (Unified Findings Schema).
     findings: List[Finding] = []
@@ -253,9 +264,23 @@ def run(
     store = ArtifactStore(ares.run_id, root=ares.run_dir.parent)
     path = store.write_json("extracted_pr.json", extracted.model_dump(mode="json"))
 
+    # Controlled-LLM audit trace — only when an Agent B fallback actually ran (§4.1/§7).
+    if llm_used:
+        trace = LLMFallbackTrace(
+            source_agent=SOURCE_AGENT,
+            fallback_type="item_extraction",
+            used=True,
+            reason="Item description empty or too vague for reliable pricing.",
+            confidence=0.7,
+            normalized_candidate=normalized_candidate,
+            original_evidence="extracted_pr.json",
+        )
+        store.write_json("llm_fallback_trace.json", trace.model_dump(mode="json"))
+
     return AgentBResult(
         extracted_pr=extracted,
         extracted_path=path,
         findings=findings,
         llm_fallback_used=llm_used,
+        llm_normalized_candidate=normalized_candidate,
     )
