@@ -67,3 +67,26 @@ class RunMetrics(BaseModel):
     highest_severity: str = "none"
     po_status: str = "blocked"
     processing_time_seconds: float = 0.0
+
+
+# ---------- ERP API stub + tracker payload (plan §12) ----------
+class ErpPostingResult(BaseModel):
+    run_id: str
+    pr_id: str
+    po_status: str                               # ready_for_posting | blocked
+    erp_status: str                              # simulated_post_success | not_posted
+    posted: bool = False
+    po_number: Optional[str] = None
+    message: str = ""
+
+
+class TrackerPayload(BaseModel):
+    run_id: str
+    pr_id: str
+    system: str = "jira_stub"                    # Jira/ADO tracker stub
+    routed_to: str = ""                          # FP&A | Procurement | Compliance | Manual Review
+    task_title: str = ""
+    task_description: str = ""
+    severity: str = "none"
+    decision: str = ""
+    findings: List[str] = Field(default_factory=list)
