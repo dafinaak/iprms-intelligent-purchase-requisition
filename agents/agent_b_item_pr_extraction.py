@@ -16,7 +16,7 @@ LangChain/LLM is an OPTIONAL fallback (off by default) used only when a field is
 genuinely unclear (empty); it never overrides clear values and never makes
 procurement decisions. The pipeline is fully deterministic with it disabled.
 """
-from _future_ import annotations
+from __future__ import annotations
 
 import json
 import os
@@ -26,9 +26,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-REPO_ROOT = str(Path(file_).resolve().parents[1])
-if _REPO_ROOT not in sys.path:
-    sys.path.insert(0, _REPO_ROOT)
+REPO_ROOT = str(Path(__file__).resolve().parents[1])
+if REPO_ROOT not in sys.path:
+    sys.path.insert(0, REPO_ROOT)
 
 from agents.agent_a_intake_context import AgentAResult
 from artifact_store import ArtifactStore
