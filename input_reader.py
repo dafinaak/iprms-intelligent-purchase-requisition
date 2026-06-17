@@ -118,4 +118,58 @@ def read_digital_pdf(path: Path | str, engine: str = "auto") -> ReaderResult:
     if engine == "pdfplumber":
         return _read_pdfplumber(path)
     if engine == "auto":
-        result
+        result = _read_pymupdf(path)
+        if not result.raw_text.strip():
+            return _read_pdfplumber(path)
+        return result
+    raise ValueError(f"Unknown PDF engine: {engine!r}")
+
+
+def read_scanned_pdf(path: Path | str, dpi: int = 200) -> ReaderResult:
+    if not ocr_available():
+        raise OcrUnavailableError(
+            "Tesseract OCR not found. Install it and/or set TESSERACT_CMD in .env."
+        )
+    import pytesseract
+    from PIL import Image
+
+    doc = fitz.open(path)
+    pages, full = [], []
+    for i, page in enumerate(doc, start=1):
+        pix = page.get_pixmap(dpi=dpi)
+        img = Image.open(io.BytesIO(pix.tobytes("png")))
+        data = pytesseract.image_to_data(img, output_type=pytesseract.Output.DICT)
+        words = [
+            WordBox(t, [float(data["left"][j]), float(data["top"][j]),
+                        float(data["left"][j] + data["width"][j]),
+                        float(data["top"][j] + data["height"][j])])
+            for j, t in enumerate(data["text"]) if t.strip()
+        ]
+        text = pytesseract.image_to_string(img)
+        pages.append(PageText(i, text, words))
+        full.append(text)
+    doc.close()
+    return ReaderResult("scanned_pdf", "\n".join(full), pages=pages,
+                        source_file=str(path), ocr_used=True)
+
+
+# ---------- unified dispatcher ----------
+def read_input(source: Any, input_type: str) -> ReaderResult:
+    """Normalise any supported input into a ReaderResult for Agent B.
+
+    `input_type` is supplied by Agent A (from the manifest); the reader does not
+    detect it. The only exception is a text-less "pdf" falling back to OCR.
+    """
+    it = input_type.lower()
+    if it == "json":
+        return read_json(source)
+    if it == "web_form":
+        return read_web_form(source)
+    if it == "scanned_pdf":
+        return read_scanned_pdf(source)
+    if it == "pdf":
+        result = read_digital_pdf(source)
+        if not result.raw_text.strip() and ocr_available():
+            return read_scanned_pdf(source)
+        return result
+    raise ValueError(f"Unsupported input_type: {input_type!r}")

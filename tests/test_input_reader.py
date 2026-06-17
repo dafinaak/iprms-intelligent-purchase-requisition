@@ -116,4 +116,6 @@ def test_ocr_unavailable_raises():
     try:
         input_reader.ocr_available = lambda: False
         with pytest.raises(OcrUnavailableError):
-            input_reader.read_scanned_pdf(BUNDLE / "requisition_form.pdf
+            input_reader.read_scanned_pdf(BUNDLE / "requisition_form.pdf")
+    finally:
+        input_reader.ocr_available = monkeypatch_avail
