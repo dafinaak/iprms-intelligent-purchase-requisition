@@ -69,8 +69,46 @@ def test_approval_level_scales_with_amount(tmp_path):
 def test_policy_check_json_written_with_flags(tmp_path):
     _ares, res = _run_e("pr_bundle_001", tmp_path)
     data = json.loads(res.policy_check_path.read_text(encoding="utf-8"))
-    # complex-procurement flags present (default False; Task 24 sets them)
+    # clean PR: all complex-procurement flags False
     for flag in ("framework_agreement_flag", "blanket_order_flag",
                  "emergency_procurement_flag", "multi_currency_flag"):
         assert data[flag] is False
     assert data["compliance_status"] == "compliant"
+
+
+# ---------- Task 24: complex procurement flags ----------
+def test_framework_agreement_flag(tmp_path):
+    _ares, res = _run_e("scenario_10_framework_agreement", tmp_path)
+    assert res.policy_check.framework_agreement_flag is True
+    assert any(f.finding_type == "FRAMEWORK_AGREEMENT" for f in res.findings)
+
+
+def test_blanket_order_flag(tmp_path):
+    _ares, res = _run_e("scenario_11_blanket_order", tmp_path)
+    assert res.policy_check.blanket_order_flag is True
+    assert any(f.finding_type == "BLANKET_ORDER" for f in res.findings)
+
+
+def test_multi_currency_flag_requires_approval(tmp_path):
+    _ares, res = _run_e("scenario_12_multi_currency", tmp_path)  # USD
+    pc = res.policy_check
+    assert pc.multi_currency_flag is True
+    assert pc.manual_approval_required is True
+    assert any(f.finding_type == "MULTI_CURRENCY" for f in res.findings)
+
+
+def test_emergency_procurement_flag(tmp_path):
+    _ares, res = _run_e("scenario_05_emergency_sole_source", tmp_path)
+    pc = res.policy_check
+    assert pc.emergency_procurement_flag is True
+    assert pc.manual_approval_required is True
+    assert any(f.finding_type == "EMERGENCY_PROCUREMENT" for f in res.findings)
+
+
+def test_clean_pr_no_complex_flags(tmp_path):
+    _ares, res = _run_e("pr_bundle_001", tmp_path)
+    pc = res.policy_check
+    assert not pc.framework_agreement_flag
+    assert not pc.blanket_order_flag
+    assert not pc.emergency_procurement_flag
+    assert not pc.multi_currency_flag
