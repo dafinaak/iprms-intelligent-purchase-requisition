@@ -1,5 +1,3 @@
-import shutil
-
 import pytest
 
 from configs.config import PR_BUNDLES_DIR
@@ -68,54 +66,37 @@ def test_unknown_pdf_engine_raises():
         read_digital_pdf(BUNDLE / "requisition_form.pdf", engine="nope")
 
 
-@pytest.mark.skipif(shutil.which("tesseract") is None, reason="Tesseract OCR not installed")
-def test_scanned_pdf_ocr_when_available():
-    from input_reader import read_scanned_pdf
-    r = read_scanned_pdf(BUNDLE / "requisition_form.pdf")
-    assert r.ocr_used is True
-    assert r.input_type == "scanned_pdf"
-    assert r.raw_text.strip() != ""
+def test_scanned_pdf_with_injected_ocr_engine():
+    """OCR via an injected engine — deterministic, no system Tesseract binary."""
+    from input_reader import WordBox, read_scanned_pdf
 
+    def fake_engine(image):
+        return "Gjirafa Mall\n", [WordBox("Gjirafa", [10.0, 20.0, 70.0, 35.0]),
+                                  WordBox("Mall", [80.0, 20.0, 120.0, 35.0])]
 
-def test_scanned_pdf_ocr_path_with_mock(monkeypatch):
-    """Verify the OCR code path (render -> image_to_data -> WordBox) without a real
-    Tesseract binary, by injecting a fake pytesseract module."""
-    import sys
-    import types
-
-    import input_reader
-
-    fake = types.SimpleNamespace(
-        Output=types.SimpleNamespace(DICT="dict"),
-        image_to_data=lambda img, output_type=None: {
-            "text": ["Gjirafa", "Mall", "  "],
-            "left": [10, 80, 0], "top": [20, 20, 0],
-            "width": [60, 40, 0], "height": [15, 15, 0],
-        },
-        image_to_string=lambda img: "Gjirafa Mall\n",
-    )
-    monkeypatch.setitem(sys.modules, "pytesseract", fake)
-    monkeypatch.setattr(input_reader, "ocr_available", lambda: True)
-
-    r = input_reader.read_scanned_pdf(BUNDLE / "requisition_form.pdf")
+    r = read_scanned_pdf(BUNDLE / "requisition_form.pdf", ocr_engine=fake_engine)
     assert r.ocr_used is True
     assert r.input_type == "scanned_pdf"
     assert "Gjirafa Mall" in r.raw_text
-    # blank OCR tokens are dropped; remaining words keep 4-number boxes
     words = r.pages[0].words
     assert [w.text for w in words] == ["Gjirafa", "Mall"]
     for w in words:
         assert len(w.bbox) == 4
 
 
-def test_ocr_unavailable_raises():
+def test_read_input_uses_injected_ocr_for_scanned():
+    from input_reader import WordBox, read_input
+
+    engine = lambda image: ("scanned text", [WordBox("scanned", [0.0, 0.0, 10.0, 10.0])])
+    r = read_input(BUNDLE / "requisition_form.pdf", "scanned_pdf", ocr_engine=engine)
+    assert r.input_type == "scanned_pdf" and "scanned text" in r.raw_text
+
+
+def test_ocr_unavailable_raises_without_engine(monkeypatch):
     import input_reader
     from input_reader import OcrUnavailableError
 
-    monkeypatch_avail = input_reader.ocr_available
-    try:
-        input_reader.ocr_available = lambda: False
-        with pytest.raises(OcrUnavailableError):
-            input_reader.read_scanned_pdf(BUNDLE / "requisition_form.pdf")
-    finally:
-        input_reader.ocr_available = monkeypatch_avail
+    # No engine injected AND no system OCR available -> clear error.
+    monkeypatch.setattr(input_reader, "ocr_available", lambda: False)
+    with pytest.raises(OcrUnavailableError):
+        input_reader.read_scanned_pdf(BUNDLE / "requisition_form.pdf")

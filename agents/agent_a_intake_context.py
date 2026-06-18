@@ -51,12 +51,14 @@ from schemas.pr_schema import (
 
 SOURCE_AGENT = "Agent A"
 
-# Item categories that indicate capital expenditure (capex).
-CAPEX_CATEGORIES = {
+# Fallback defaults used only if policy_pack has no `pr_classification` section.
+# The authoritative rules live in configs/policy_pack.yaml -> pr_classification.
+_DEFAULT_CAPEX_CATEGORIES = {
     "capital equipment", "machinery", "vehicle", "infrastructure",
     "capex", "asset", "building", "capital",
 }
-EMERGENCY_URGENCIES = {"emergency", "urgent", "critical"}
+_DEFAULT_EMERGENCY_URGENCIES = {"emergency", "urgent", "critical"}
+_DEFAULT_CAPEX_THRESHOLD = 10000.0
 
 
 @dataclass
@@ -146,8 +148,19 @@ def classify_pr_type_metadata(
     if not metadata:
         return None, 0.0
 
+    # Rules from policy_pack -> pr_classification (config-driven), with fallbacks.
+    cfg = policy.get("pr_classification", {})
+    emergency_urgencies = {str(u).strip().lower()
+                           for u in cfg.get("emergency_urgencies", _DEFAULT_EMERGENCY_URGENCIES)}
+    capex_categories = {str(c).strip().lower()
+                        for c in cfg.get("capex_categories", _DEFAULT_CAPEX_CATEGORIES)}
+    capex_threshold = float(cfg.get(
+        "capex_amount_threshold",
+        policy.get("approval_thresholds", {}).get("director_limit", _DEFAULT_CAPEX_THRESHOLD),
+    ))
+
     urgency = str(metadata.get("urgency", "")).strip().lower()
-    if bool(metadata.get("emergency")) or urgency in EMERGENCY_URGENCIES:
+    if bool(metadata.get("emergency")) or urgency in emergency_urgencies:
         return PRType.EMERGENCY, 0.95
 
     category = str(metadata.get("item_category", "")).strip().lower()
@@ -155,8 +168,7 @@ def classify_pr_type_metadata(
         amount = float(metadata.get("estimated_amount") or 0)
     except (TypeError, ValueError):
         amount = 0.0
-    capex_threshold = float(policy.get("approval_thresholds", {}).get("director_limit", 10000))
-    if category in CAPEX_CATEGORIES or amount >= capex_threshold:
+    if category in capex_categories or amount >= capex_threshold:
         return PRType.CAPEX, 0.9
 
     if category or urgency:

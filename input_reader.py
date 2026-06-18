@@ -19,9 +19,14 @@ import os
 import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import fitz  # PyMuPDF
+
+# An OCR engine is any callable that turns a page image into (text, word boxes).
+# This indirection lets tests inject a deterministic mock OCR engine so the
+# project never depends on a system OCR binary for tests.
+OcrEngine = Callable[[Any], Tuple[str, List["WordBox"]]]
 
 
 @dataclass
@@ -125,27 +130,43 @@ def read_digital_pdf(path: Path | str, engine: str = "auto") -> ReaderResult:
     raise ValueError(f"Unknown PDF engine: {engine!r}")
 
 
-def read_scanned_pdf(path: Path | str, dpi: int = 200) -> ReaderResult:
-    if not ocr_available():
-        raise OcrUnavailableError(
-            "Tesseract OCR not found. Install it and/or set TESSERACT_CMD in .env."
-        )
+def _default_tesseract_ocr(image: Any) -> Tuple[str, List[WordBox]]:
+    """Default OCR engine: local Tesseract via pytesseract."""
     import pytesseract
+
+    data = pytesseract.image_to_data(image, output_type=pytesseract.Output.DICT)
+    words = [
+        WordBox(t, [float(data["left"][j]), float(data["top"][j]),
+                    float(data["left"][j] + data["width"][j]),
+                    float(data["top"][j] + data["height"][j])])
+        for j, t in enumerate(data["text"]) if t.strip()
+    ]
+    return pytesseract.image_to_string(image), words
+
+
+def read_scanned_pdf(path: Path | str, *, ocr_engine: Optional[OcrEngine] = None,
+                     dpi: int = 200) -> ReaderResult:
+    """OCR a scanned PDF through an OCR engine (interface).
+
+    Pass `ocr_engine` to inject any engine (e.g. a deterministic mock in tests).
+    With none given, the default local Tesseract engine is used — and only then is
+    a Tesseract binary required (OcrUnavailableError otherwise).
+    """
     from PIL import Image
+
+    if ocr_engine is None:
+        if not ocr_available():
+            raise OcrUnavailableError(
+                "No OCR engine: pass ocr_engine=..., or install Tesseract / set TESSERACT_CMD."
+            )
+        ocr_engine = _default_tesseract_ocr
 
     doc = fitz.open(path)
     pages, full = [], []
     for i, page in enumerate(doc, start=1):
         pix = page.get_pixmap(dpi=dpi)
         img = Image.open(io.BytesIO(pix.tobytes("png")))
-        data = pytesseract.image_to_data(img, output_type=pytesseract.Output.DICT)
-        words = [
-            WordBox(t, [float(data["left"][j]), float(data["top"][j]),
-                        float(data["left"][j] + data["width"][j]),
-                        float(data["top"][j] + data["height"][j])])
-            for j, t in enumerate(data["text"]) if t.strip()
-        ]
-        text = pytesseract.image_to_string(img)
+        text, words = ocr_engine(img)
         pages.append(PageText(i, text, words))
         full.append(text)
     doc.close()
@@ -154,11 +175,13 @@ def read_scanned_pdf(path: Path | str, dpi: int = 200) -> ReaderResult:
 
 
 # ---------- unified dispatcher ----------
-def read_input(source: Any, input_type: str) -> ReaderResult:
+def read_input(source: Any, input_type: str, *,
+               ocr_engine: Optional[OcrEngine] = None) -> ReaderResult:
     """Normalise any supported input into a ReaderResult for Agent B.
 
     `input_type` is supplied by Agent A (from the manifest); the reader does not
-    detect it. The only exception is a text-less "pdf" falling back to OCR.
+    detect it. The only exception is a text-less "pdf" falling back to OCR. An
+    optional `ocr_engine` is used for scanned input.
     """
     it = input_type.lower()
     if it == "json":
@@ -166,10 +189,10 @@ def read_input(source: Any, input_type: str) -> ReaderResult:
     if it == "web_form":
         return read_web_form(source)
     if it == "scanned_pdf":
-        return read_scanned_pdf(source)
+        return read_scanned_pdf(source, ocr_engine=ocr_engine)
     if it == "pdf":
         result = read_digital_pdf(source)
-        if not result.raw_text.strip() and ocr_available():
-            return read_scanned_pdf(source)
+        if not result.raw_text.strip() and (ocr_engine is not None or ocr_available()):
+            return read_scanned_pdf(source, ocr_engine=ocr_engine)
         return result
     raise ValueError(f"Unsupported input_type: {input_type!r}")
