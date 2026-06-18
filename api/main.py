@@ -24,6 +24,7 @@ if _REPO_ROOT not in sys.path:
     sys.path.insert(0, _REPO_ROOT)
 
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 
 from configs.config import RUNS_DIR as _DEFAULT_RUNS_DIR
@@ -100,6 +101,14 @@ def get_artifacts(run_id: str) -> dict:
     d = _run_dir(run_id)
     artifacts = sorted(p.name for p in d.iterdir() if p.is_file())
     return {"run_id": run_id, "artifacts": artifacts}
+
+
+@app.get("/runs/{run_id}/audit-log", response_class=PlainTextResponse)
+def get_audit_log(run_id: str) -> str:
+    p = _run_dir(run_id) / "audit_log.md"
+    if not p.exists():
+        raise HTTPException(status_code=404, detail="audit_log.md not found")
+    return p.read_text(encoding="utf-8")
 
 
 @app.get("/runs/{run_id}/summary")

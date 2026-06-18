@@ -19,7 +19,6 @@ procurement decisions. The pipeline is fully deterministic with it disabled.
 from __future__ import annotations
 
 import json
-import os
 import re
 import sys
 from dataclasses import dataclass, field
@@ -149,11 +148,13 @@ def _maybe_llm_normalize(text: str, llm_fallback: Optional[Callable[[str], str]]
             return llm_fallback(text), True
         except Exception:
             return text, False
-    if os.environ.get("IPRMS_LLM_FALLBACK_ENABLED", "").lower() not in ("1", "true", "yes"):
-        return text, False
+    # Delegate to the controlled llm/ module (returns None when disabled/unavailable).
     try:
-        from llm.extraction_fallback import normalize_item_description  # optional module
-        return normalize_item_description(text), True
+        from llm.extraction_fallback import normalize_item_description
+        candidate = normalize_item_description(text)
+        if candidate is None:
+            return text, False
+        return candidate, True
     except Exception:
         return text, False
 

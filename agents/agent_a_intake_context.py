@@ -196,12 +196,13 @@ def _maybe_llm_pr_type(
         except Exception:
             return None, False, None
 
-    import os
-    if os.environ.get("IPRMS_LLM_FALLBACK_ENABLED", "").lower() not in ("1", "true", "yes"):
-        return None, False, None
+    # Delegate to the controlled llm/ module (returns None when disabled/unavailable).
     try:
-        from llm.pr_type_classifier import classify_pr_type as llm_classify  # optional
-        return _coerce(llm_classify(metadata)), True, "llm"
+        from llm.pr_type_classifier import classify_pr_type
+        candidate = classify_pr_type(metadata)
+        if candidate is None:
+            return None, False, None
+        return _coerce(candidate), True, "llm"
     except Exception:
         return None, False, None
 

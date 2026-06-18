@@ -53,6 +53,14 @@ def test_summary_and_metrics(client):
     assert metrics["by_decision"].get("blocked") == 1
 
 
+def test_audit_log_endpoint(client):
+    run_id = client.post("/run-pr", json={"bundle_dir": BUNDLE}).json()["run_id"]
+    r = client.get(f"/runs/{run_id}/audit-log")
+    assert r.status_code == 200
+    assert "Audit Log" in r.text
+    assert "auto_po" in r.text
+
+
 def test_invalid_bundle_returns_400(client, tmp_path):
     empty = tmp_path / "empty_bundle"
     empty.mkdir()
