@@ -1,0 +1,16 @@
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.git/
+.gitignore
+.env
+.env.local
+runs/*
+!runs/.gitkeep
+.vscode/
+.idea/
+*.md
+!README.md

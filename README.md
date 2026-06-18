@@ -130,9 +130,19 @@ GitHub repo → Local Python environment or Docker container
 ```
 
 ```bash
+# Build the local image
 docker build -t iprms .
-docker run -p 8501:8501 iprms
+
+# Run the FastAPI service (default CMD) on http://localhost:8000
+docker run --rm -p 8000:8000 iprms
+
+# Run the Streamlit demo UI instead, on http://localhost:8501
+docker run --rm -p 8501:8501 iprms \
+    streamlit run app/streamlit_app.py --server.port 8501 --server.address 0.0.0.0
 ```
+
+> Azure Container Apps / cloud deployment is **not** used. Docker is only for a local/containerized
+> demo; the same app runs directly with `uvicorn api.main:app` / `streamlit run app/streamlit_app.py`.
 
 ## Team
 
