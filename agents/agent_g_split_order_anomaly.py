@@ -1,16 +1,3 @@
-"""Agent G - Split-order / Anomaly Detection (IPRMS).
-
-Detects suspicious PR patterns against historical_prs.csv (plani.pdf §6):
-  * multiple PRs from the same department in the same (ISO) week,
-  * the same item split across multiple PRs,
-  * combined amount exceeding the approval/bid threshold,
-  * possible threshold avoidance (splitting under-threshold PRs whose combined
-    total reaches the threshold).
-
-The threshold comes from policy_pack bid_rules.threshold_amount (not hardcoded).
-Produces anomaly_report.json + findings (Unified Findings Schema). Deterministic
-& rule-based — LLM never decides anomalies (§12).
-"""
 from __future__ import annotations
 
 import csv

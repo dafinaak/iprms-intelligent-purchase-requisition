@@ -1,13 +1,3 @@
-"""Agent C - Budget Validation (IPRMS).
-
-Validates whether the requested PR amount fits the available cost-center budget
-(plani.pdf §6). Reads extracted_pr.json (Agent B) and the bundle's
-budget_snapshot.csv + cost_center_mapping.csv (paths resolved from Agent A's
-evidence_index). Produces budget_check.json and findings (Unified Findings Schema).
-
-Deterministic & rule-based — no LLM is involved in budget decisions.
-Possible results: passed | failed_budget_exhausted | route_to_FP&A.
-"""
 from __future__ import annotations
 
 import csv

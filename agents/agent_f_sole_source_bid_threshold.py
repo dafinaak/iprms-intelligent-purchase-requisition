@@ -1,13 +1,3 @@
-"""Agent F - Sole-source / Bid-threshold (IPRMS).
-
-Detects sole-source purchases and bid-threshold violations (plani.pdf §6).
-Reads extracted_pr.json (amount, justification) and the requisition metadata
-(sole_source / emergency / number_of_bids), applies policy_pack bid rules, and
-produces sole_source_check.json + bid_threshold_check.json with findings
-(Unified Findings Schema).
-
-Deterministic & rule-based — LLM never decides sole-source/bid outcomes (§12).
-"""
 from __future__ import annotations
 
 import json

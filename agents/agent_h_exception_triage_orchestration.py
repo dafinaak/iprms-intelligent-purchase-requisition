@@ -1,13 +1,3 @@
-"""Agent H - Exception Triage & Lead Orchestration (IPRMS).
-
-Final decision layer (plani.pdf §6). Reads all upstream artifacts, merges and
-deduplicates findings, categorises exceptions, and makes the final DETERMINISTIC
-decision using artifact result fields + policy_pack.yaml. LLM output never decides
-approval/blocking/routing/PO posting (§4.1/§12).
-
-Task 27 outputs: exceptions.md, approval_packet.json.
-(po_draft.json, audit_log.md, metrics.json, run_summary.csv are added in Task 28.)
-"""
 from __future__ import annotations
 
 import json

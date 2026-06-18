@@ -1,21 +1,3 @@
-"""Agent B - Item / PR Extraction (IPRMS).
-
-Agent B extracts structured PR fields from the requisition (plani.pdf §6) and
-writes extracted_pr.json (schema: schemas.pr_schema.ExtractedPR).
-
-Extraction strategy (deterministic-first):
-  * VALUES come from the structured JSON — reader.fields for json/web_form input,
-    or the sibling requisition_form.json for a PDF bundle. This is reliable and
-    layout-independent (no brittle PDF label parsing).
-  * BOUNDING BOXES come from the PDF word boxes (best-effort per field; None if a
-    value is not located on the page).
-  * A label-based PDF parser is used ONLY as a fallback for a PDF-only bundle that
-    ships no JSON.
-
-LangChain/LLM is an OPTIONAL fallback (off by default) used only when a field is
-genuinely unclear (empty); it never overrides clear values and never makes
-procurement decisions. The pipeline is fully deterministic with it disabled.
-"""
 from __future__ import annotations
 
 import json

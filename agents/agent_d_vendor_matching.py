@@ -1,18 +1,3 @@
-"""Agent D - Vendor Matching + Catalogue Pricing & Vague-item Detection (IPRMS).
-
-Matches the requested vendor against approved_vendors.csv and classifies it as
-approved/preferred / non-preferred / not-approved (plani.pdf §6, Task 16).
-
-Task 17 extends this with:
-  * catalogue price comparison (catalogue_pricing.csv) -> price variance vs the
-    policy tolerance,
-  * rule-based vague / unclear item-description detection (pricing context),
-  * pricing-uncertainty flagging (buyer-clarification scenario).
-
-All pricing/routing decisions are deterministic and rule-based. An optional LLM
-fallback may only assist with ambiguous text; it is off by default and never
-decides pricing or routing. Output: vendor_match.json + Unified Findings.
-"""
 from __future__ import annotations
 
 import csv

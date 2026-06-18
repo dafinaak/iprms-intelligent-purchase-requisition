@@ -1,24 +1,3 @@
-"""Agent A - Intake & Context / Gatekeeper (IPRMS).
-
-Agent A is the entry point of the pipeline (plani.pdf §6). It:
-  1. accepts a PR bundle and validates it (gatekeeper) — invalid bundles are
-     blocked before any processing happens;
-  2. detects the input type (PDF / scanned PDF / JSON / web form) from the
-     manifest;
-  3. classifies the PR type (standard / emergency / capex) from deterministic
-     metadata first; a controlled LLM fallback may only SUGGEST a type when the
-     metadata is insufficient (§4.1) and never decides routing/approval/budget/
-     vendor/compliance/anomaly/PO rules;
-  4. generates a run_id and creates runs/<run_id>/;
-  5. builds context_packet.json and evidence_index.json (mandatory outputs), plus
-     llm_fallback_trace.json only when the Agent A fallback is used;
-  6. performs initial, intake-level risk filtering as Findings.
-
-Standalone & deterministic: Agent A reads the manifest, the bundle files, and the
-structured PR metadata (requisition JSON) only. It does NOT OCR/parse the PDF
-document — that is Agent B's job. With the LLM fallback disabled, classification
-is fully deterministic.
-"""
 from __future__ import annotations
 
 import hashlib

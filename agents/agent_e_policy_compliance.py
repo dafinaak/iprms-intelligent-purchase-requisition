@@ -1,15 +1,3 @@
-"""Agent E - Compliance & Policy (IPRMS).
-
-Applies procurement policies and compliance rules (plani.pdf §6). Reads
-extracted_pr.json, budget_check.json, vendor_match.json and policy_pack.yaml, and
-produces policy_check.json with findings (Unified Findings Schema).
-
-Task 23 scope: approval thresholds, non-preferred vendor rules, budget policy,
-urgency policy. The complex-procurement flags (framework / blanket / emergency /
-multi-currency) default to False here and are populated by Task 24.
-
-Deterministic & rule-based — LLM never decides compliance (§12).
-"""
 from __future__ import annotations
 
 import json
