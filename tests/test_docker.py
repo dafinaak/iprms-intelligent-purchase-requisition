@@ -1,8 +1,3 @@
-"""Sanity checks for the Docker demo setup (Task 10).
-
-Does not build the image (heavy); verifies the Dockerfile/.dockerignore are
-well-formed and reference the right entrypoints.
-"""
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]

@@ -1,10 +1,3 @@
-"""Task 30 — final QA across all mandatory scenarios + demo readiness.
-
-Standalone validation against LOCAL JSON / Markdown / CSV artifacts (no Delta).
-Covers: all 12 scenarios e2e, artifact completeness, run folders, run_summary,
-Agent A PR-type fallback (disabled/mocked), Agent B fallback determinism,
-LangGraph parity, idempotent re-run, and policy-change behaviour.
-"""
 import csv
 import json
 import shutil

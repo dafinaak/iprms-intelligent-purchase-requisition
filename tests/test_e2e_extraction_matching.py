@@ -1,10 +1,3 @@
-"""Task 20 — end-to-end validation of extraction & matching outputs.
-
-Runs sample PR bundles through the full pipeline (Agent B/C/D included) and
-confirms extracted_pr.json / budget_check.json / vendor_match.json are produced
-correctly, with valid evidence references, stored under runs/<run_id>/, and that
-run_summary.csv reflects the extraction & matching status.
-"""
 import csv
 from datetime import datetime, timezone
 

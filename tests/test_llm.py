@@ -1,4 +1,3 @@
-"""Tests for the controlled llm/ fallback modules (plan §4.1)."""
 import pytest
 
 from llm import guardrails
