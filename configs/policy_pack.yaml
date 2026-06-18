@@ -42,3 +42,12 @@ multi_currency:
 regional_rules:
   default_region: EU
   default_currency: EUR
+
+# --- PR-type classification — Agent A (deterministic metadata rules first) ---
+# LLM is only a controlled fallback when metadata cannot classify
+# standard / emergency / capex (plan §4.1).
+pr_classification:
+  capex_categories: [capital equipment, machinery, vehicle, infrastructure,
+                     capex, asset, building, capital]
+  capex_amount_threshold: 10000            # amount >= this -> capex
+  emergency_urgencies: [emergency, urgent, critical]
